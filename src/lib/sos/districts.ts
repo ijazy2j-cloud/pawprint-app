@@ -32,6 +32,11 @@ const districtCenters: Array<{ district: SriLankaDistrict; lat: number; lng: num
   { district: "Kegalle", lat: 7.2513, lng: 80.3464 },
 ];
 
+export function districtCenter(name: string): { lat: number; lng: number } | undefined {
+  const found = districtCenters.find((entry) => entry.district === name);
+  return found ? { lat: found.lat, lng: found.lng } : undefined;
+}
+
 export function inferDistrictFromCoordinates(lat: number, lng: number): SriLankaDistrict {
   return districtCenters.reduce((closest, current) => {
     const closestDistance = Math.hypot(lat - closest.lat, lng - closest.lng);

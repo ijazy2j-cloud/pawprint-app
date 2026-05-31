@@ -73,13 +73,18 @@ export function SosReportForm({ defaultContact }: Props) {
   const form = useForm<SosReportFormValues>({ resolver: zodResolver(sosReportFormSchema), defaultValues: { condition: "INJURED", district: (defaultContact.district as SosReportFormValues["district"]) ?? "Colombo", description: "", landmark: "", reporterName: defaultContact.name ?? "", reporterEmail: defaultContact.email ?? "", reporterPhone: defaultContact.phone ?? "", photos: ["https://example.com/client-placeholder.jpg"] } });
   const watchedLat = form.watch("lat");
   const watchedLng = form.watch("lng");
+  const watchedDistrict = form.watch("district");
   const lat = typeof watchedLat === "number" ? watchedLat : Number(watchedLat) || undefined;
   const lng = typeof watchedLng === "number" ? watchedLng : Number(watchedLng) || undefined;
+
+  // Once the user picks a district by hand, never let an auto-inferred one overwrite it.
+  const districtTouched = useRef(false);
+  const districtField = form.register("district");
 
   const photosDone = previewUrls.length > 0;
   const locationDone = Boolean(lat && lng);
 
-  function setLocation(nextLat: number, nextLng: number) { form.setValue("lat", Number(nextLat.toFixed(7)), { shouldValidate: true }); form.setValue("lng", Number(nextLng.toFixed(7)), { shouldValidate: true }); form.setValue("district", inferDistrictFromCoordinates(nextLat, nextLng), { shouldValidate: true }); }
+  function setLocation(nextLat: number, nextLng: number) { form.setValue("lat", Number(nextLat.toFixed(7)), { shouldValidate: true }); form.setValue("lng", Number(nextLng.toFixed(7)), { shouldValidate: true }); if (!districtTouched.current) form.setValue("district", inferDistrictFromCoordinates(nextLat, nextLng), { shouldValidate: true }); }
   async function handleFiles(files: FileList | null) { if (!files || !fileInputRef.current) return; const selected = Array.from(files).slice(0, 3); const compressed = await Promise.all(selected.map(compressImage)); const dataTransfer = new DataTransfer(); compressed.forEach((file) => dataTransfer.items.add(file)); fileInputRef.current.files = dataTransfer.files; form.setValue("photos", compressed.map((_, index) => `https://local-upload.invalid/${index}.jpg`), { shouldValidate: true }); setPreviewUrls(compressed.map((file) => URL.createObjectURL(file))); }
   function captureGps() { navigator.geolocation.getCurrentPosition((position) => setLocation(position.coords.latitude, position.coords.longitude), () => setState({ ok: false, error: "Could not access GPS. Drop a pin on the map instead." }), { enableHighAccuracy: true, timeout: 10000 }); }
   function submit(formData: FormData) { setState({ ok: false }); startTransition(async () => { const result = await createSosReport({ ok: false }, formData); setState(result); if (result.ok && result.reportId) router.push(`/report/${result.reportId}`); }); }
@@ -125,9 +130,9 @@ export function SosReportForm({ defaultContact }: Props) {
         <StepHeader n={3} title="Where is the animal?" hint="Use your location, or tap the map. Exact GPS stays private." done={locationDone} />
         <Button type="button" variant="outline" onClick={captureGps} className="w-full sm:w-auto"><LocateFixed className="size-4" aria-hidden /> Use my location</Button>
         <input type="hidden" {...form.register("lat", { valueAsNumber: true })} /><input type="hidden" {...form.register("lng", { valueAsNumber: true })} />
-        <div className="mt-4 overflow-hidden rounded-2xl"><SosLocationMap lat={lat} lng={lng} onChange={setLocation} /></div>
+        <div className="mt-4"><SosLocationMap lat={lat} lng={lng} district={watchedDistrict} onChange={setLocation} /></div>
         <label htmlFor="sos-district" className="mt-4 block text-sm font-bold">District</label>
-        <select id="sos-district" {...form.register("district")} name="district" className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-white p-3">{sriLankaDistricts.map((district) => <option key={district}>{district}</option>)}</select>
+        <select id="sos-district" {...districtField} name="district" onChange={(event) => { districtTouched.current = true; void districtField.onChange(event); }} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-white p-3">{sriLankaDistricts.map((district) => <option key={district}>{district}</option>)}</select>
         <label htmlFor="sos-landmark" className="mt-4 block text-sm font-bold">Nearest landmark <span className="font-normal text-[#6B5847]">(optional)</span></label>
         <input id="sos-landmark" {...form.register("landmark")} name="landmark" className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-white p-3" placeholder="Near temple, school, junction…" />
       </section>

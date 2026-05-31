@@ -19,7 +19,7 @@ const csp = [
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https://res.cloudinary.com https://images.unsplash.com https://*.tile.openstreetmap.org data: blob:",
-  "connect-src 'self' https://api.cloudinary.com https://api.resend.com https://*.tile.openstreetmap.org",
+  "connect-src 'self' https://api.cloudinary.com https://api.resend.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org",
   "font-src 'self'",
   "frame-ancestors 'none'",
 ].join('; ');

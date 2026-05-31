@@ -58,13 +58,18 @@ export function LostFoundForm({ mode, defaultContact }: Props) {
 
   const watchedLat = form.watch("lat");
   const watchedLng = form.watch("lng");
+  const watchedDistrict = form.watch("district");
   const lat = typeof watchedLat === "number" ? watchedLat : Number(watchedLat) || undefined;
   const lng = typeof watchedLng === "number" ? watchedLng : Number(watchedLng) || undefined;
+
+  // Once the user picks a district by hand, never let an auto-inferred one overwrite it.
+  const districtTouched = useRef(false);
+  const districtField = form.register("district");
 
   function setLocation(nextLat: number, nextLng: number) {
     form.setValue("lat", Number(nextLat.toFixed(7)), { shouldValidate: true });
     form.setValue("lng", Number(nextLng.toFixed(7)), { shouldValidate: true });
-    form.setValue("district", inferDistrictFromCoordinates(nextLat, nextLng), { shouldValidate: true });
+    if (!districtTouched.current) form.setValue("district", inferDistrictFromCoordinates(nextLat, nextLng), { shouldValidate: true });
   }
 
   function captureGps() {
@@ -120,8 +125,8 @@ export function LostFoundForm({ mode, defaultContact }: Props) {
         <section className="rounded-2xl border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3"><label className="text-sm font-semibold">{isLost ? "Last seen location" : "Found location"}</label><Button type="button" variant="outline" size="sm" onClick={captureGps}>Auto-capture GPS</Button></div>
           <input type="hidden" {...form.register("lat", { valueAsNumber: true })} /><input type="hidden" {...form.register("lng", { valueAsNumber: true })} />
-          <div className="mt-3"><SosLocationMap lat={lat} lng={lng} onChange={setLocation} /></div>
-          <label className="mt-4 block text-sm font-semibold">District<select {...form.register("district")} name="district" className="mt-2 w-full rounded-md border bg-background p-3">{sriLankaDistricts.map((district) => <option key={district}>{district}</option>)}</select></label>
+          <div className="mt-3"><SosLocationMap lat={lat} lng={lng} district={watchedDistrict} onChange={setLocation} /></div>
+          <label className="mt-4 block text-sm font-semibold">District<select {...districtField} name="district" onChange={(event) => { districtTouched.current = true; void districtField.onChange(event); }} className="mt-2 w-full rounded-md border bg-background p-3">{sriLankaDistricts.map((district) => <option key={district}>{district}</option>)}</select></label>
           <label className="mt-4 block text-sm font-semibold">Approximate area / landmark<input {...form.register("landmark")} name="landmark" className="mt-2 w-full rounded-md border bg-background p-3" placeholder="Near junction, temple, school…" /></label>
           <label className="mt-4 block text-sm font-semibold">{isLost ? "Last seen date" : "Found date"}<input {...form.register("eventDate")} name="eventDate" type="date" className="mt-2 w-full rounded-md border bg-background p-3" /></label>
         </section>
