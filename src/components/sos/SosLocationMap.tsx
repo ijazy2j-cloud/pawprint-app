@@ -12,6 +12,16 @@ const pinIcon = L.divIcon({
   iconAnchor: [13, 26],
 });
 
+// Default map center when no valid pin exists yet: Colombo, Sri Lanka.
+const DEFAULT_CENTER: [number, number] = [6.9271, 79.8612];
+
+// `??` only guards null/undefined — an empty numeric input yields NaN (and typeof NaN === "number"),
+// which Leaflet rejects with "Invalid LatLng object: (NaN, NaN)". Require both to be finite numbers.
+const validCenter = (lat?: number, lng?: number): [number, number] | null =>
+  typeof lat === "number" && Number.isFinite(lat) && typeof lng === "number" && Number.isFinite(lng)
+    ? [lat, lng]
+    : null;
+
 function PinDropper({ onChange }: { onChange: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(event) {
@@ -22,17 +32,19 @@ function PinDropper({ onChange }: { onChange: (lat: number, lng: number) => void
 }
 
 export function SosLocationMap({ lat, lng, onChange }: { lat?: number; lng?: number; onChange: (lat: number, lng: number) => void }) {
-  const center: [number, number] = [lat ?? 7.8731, lng ?? 80.7718];
+  const pin = validCenter(lat, lng);
+  const center: [number, number] = pin ?? DEFAULT_CENTER;
+  const hasPin = pin !== null;
 
   return (
     <div className="overflow-hidden rounded-xl border border-[#E4D9C6]" role="application" aria-label="Map of Sri Lanka — tap to drop a pin on the animal's location">
-      <MapContainer center={center} zoom={lat && lng ? 14 : 8} scrollWheelZoom className="h-80 w-full">
+      <MapContainer center={center} zoom={hasPin ? 14 : 8} scrollWheelZoom className="h-80 w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <PinDropper onChange={onChange} />
-        {lat && lng ? <Marker position={[lat, lng]} icon={pinIcon} /> : null}
+        {hasPin ? <Marker position={center} icon={pinIcon} /> : null}
       </MapContainer>
     </div>
   );
