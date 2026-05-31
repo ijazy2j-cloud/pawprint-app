@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { Filter, Heart } from "lucide-react";
+
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Button } from "@/components/ui/button";
+import { prisma } from "@/lib/prisma";
+import { sriLankaDistricts } from "@/lib/adoption/validation";
+
+function getParam(params: Record<string, string | string[] | undefined> | undefined, key: string) { const value = params?.[key]; return Array.isArray(value) ? value[0] : value; }
+function ageRank(age?: string | null) { const text = (age ?? "").toLowerCase(); if (text.includes("month") || text.includes("puppy") || text.includes("kitten")) return 0; const match = text.match(/\d+/); return match ? Number(match[0]) : 99; }
+
+export async function AdoptionGallery({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+  const species = getParam(searchParams, "species") ?? "all";
+  const district = getParam(searchParams, "district") ?? "all";
+  const size = getParam(searchParams, "size") ?? "all";
+  const health = getParam(searchParams, "health") ?? "all";
+  const sort = getParam(searchParams, "sort") ?? "newest";
+  const listings = await prisma.adoptionListing.findMany({ where: { status: "ACTIVE", ...(species !== "all" ? { species } : {}), ...(district !== "all" ? { district } : {}), ...(size !== "all" ? { size } : {}), ...(health !== "all" ? { OR: [{ healthStatus: { contains: health, mode: "insensitive" } }, { specialNeeds: { contains: health, mode: "insensitive" } }] } : {}) }, include: { listedBy: { include: { ngoProfile: true } }, applications: { select: { id: true } } }, orderBy: sort === "newest" ? { createdAt: "desc" } : { createdAt: "desc" } });
+  const sorted = [...listings].sort((a, b) => { if (sort === "urgent") return Number(Boolean(b.specialNeeds)) - Number(Boolean(a.specialNeeds)); if (sort === "youngest") return ageRank(a.estimatedAge ?? a.age) - ageRank(b.estimatedAge ?? b.age); return 0; });
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <aside className="rounded-3xl border border-[#E4D9C6] bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:h-fit"><form className="space-y-4"><h2 className="flex items-center gap-2 text-xl font-bold"><Filter className="size-5 text-[#B45309]" aria-hidden /> Filter pets</h2><label className="block text-sm font-bold">Species<select name="species" defaultValue={species} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-[#F4EEE2]/50 p-3"><option value="all">All</option><option value="dog">Dog</option><option value="cat">Cat</option><option value="other">Other</option></select></label><label className="block text-sm font-bold">District<select name="district" defaultValue={district} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-[#F4EEE2]/50 p-3"><option value="all">All districts</option>{sriLankaDistricts.map((d) => <option key={d}>{d}</option>)}</select></label><label className="block text-sm font-bold">Size<select name="size" defaultValue={size} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-[#F4EEE2]/50 p-3"><option value="all">All</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option><option value="unknown">Unknown</option></select></label><label className="block text-sm font-bold">Health<select name="health" defaultValue={health} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-[#F4EEE2]/50 p-3"><option value="all">All</option><option value="healthy">Healthy</option><option value="vaccinated">Vaccinated</option><option value="special">Special needs</option><option value="medical">Under medical care</option></select></label><label className="block text-sm font-bold">Sort<select name="sort" defaultValue={sort} className="mt-2 w-full rounded-2xl border border-[#E4D9C6] bg-[#F4EEE2]/50 p-3"><option value="newest">Newest</option><option value="urgent">Urgent</option><option value="youngest">Youngest First</option></select></label><Button className="w-full">Apply filters</Button></form></aside>
+      <section>
+        <div className="mb-4 flex flex-wrap gap-2"><span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-[#92400E]">Always free to adopt</span><span className="rounded-full bg-lime-100 px-4 py-2 text-sm font-bold text-[#3F6212]">{sorted.length} pets waiting</span></div>
+        <div className="columns-1 gap-5 sm:columns-2 xl:columns-3">
+          {sorted.map((listing, idx) => { const verified = listing.listedBy.role === "NGO" || (listing.listedBy.role === "FOSTERER" && listing.listedBy.verified); const height = idx % 3 === 0 ? "h-80" : idx % 3 === 1 ? "h-64" : "h-72"; return <article key={listing.id} className="group paw-card mb-5 break-inside-avoid overflow-hidden"><div className={`relative ${height} bg-[#F4EEE2]`}>{listing.photos[0] ? <img src={listing.photos[0]} alt={`${listing.petName}, a ${listing.species} available for adoption`} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-6xl" aria-hidden>🐾</div>}<div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-80" /><div className="absolute bottom-0 w-full p-4 text-white"><div className="flex items-end justify-between gap-3"><div><h3 className="text-2xl font-bold">{listing.petName}</h3><p className="capitalize text-sm text-white/90">{listing.species} • {listing.estimatedAge ?? listing.age ?? "Age unknown"}</p></div><span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur">{listing.district ?? "Sri Lanka"}</span></div></div><Button asChild variant="success" className="absolute bottom-4 left-4 right-4 translate-y-6 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"><Link href={`/adopt/apply/${listing.id}`}><Heart className="size-4" aria-hidden /> Adopt Me</Link></Button></div><div className="space-y-2 p-4">{verified ? <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-900">✓ Verified Foster/NGO</span> : null}{listing.specialNeeds ? <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Special needs: {listing.specialNeeds}</p> : null}<Button asChild variant="outline" className="w-full"><Link href={`/adopt/${listing.id}`}>View story</Link></Button></div></article>; })}
+        </div>
+        {!sorted.length ? <EmptyState title="No pets available right now 🐱" description="Check back soon or browse SOS alerts to help an animal who needs rescue today." actionHref="/sos-report" actionLabel="Browse SOS alerts" icon="😺" /> : null}
+      </section>
+    </div>
+  );
+}

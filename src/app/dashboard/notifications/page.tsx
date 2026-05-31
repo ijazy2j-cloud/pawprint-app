@@ -1,0 +1,8 @@
+import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { markAllNotificationsRead, markNotificationRead } from "@/app/dashboard/actions";
+import { Button } from "@/components/ui/button";
+import { authOptions } from "@/lib/auth";
+import { notificationHref, timeAgo } from "@/lib/dashboard/helpers";
+import { prisma } from "@/lib/prisma";
+export default async function NotificationsPage({searchParams}:{searchParams?:Record<string,string>}){const session=await getServerSession(authOptions); const unread=searchParams?.tab==="unread"; const items= session?.user?.id? await prisma.notification.findMany({where:{userId:session.user.id,...(unread?{read:false}:{})},orderBy:{createdAt:"desc"},take:50}):[]; return <div className="space-y-5"><div className="flex justify-between"><h1 className="text-3xl font-bold">Notifications</h1><form action={markAllNotificationsRead}><Button>Mark all as read</Button></form></div><div className="flex gap-2"><Button asChild variant={!unread?"default":"outline"}><Link href="/dashboard/notifications">All</Link></Button><Button asChild variant={unread?"default":"outline"}><Link href="/dashboard/notifications?tab=unread">Unread</Link></Button></div><div className="space-y-2">{items.map(n=><div key={n.id} className="flex gap-3 rounded-2xl border bg-card p-4"><span>{n.read?"○":"●"}</span><div className="flex-1"><Link className="font-medium" href={notificationHref(n)}>{n.message}</Link><p className="text-xs text-muted-foreground">{n.type} • {timeAgo(n.createdAt)}</p></div><form action={markNotificationRead}><input type="hidden" name="id" value={n.id}/><Button size="sm" variant="outline">Read</Button></form></div>)}</div></div>}

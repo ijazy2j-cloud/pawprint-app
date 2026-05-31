@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand reference (decorative) */
+    --deep-earth: #241712;
+    --warm-amber: #D97706;   /* accent only — not for text on white */
+    --sage-life: #65A30D;
+    --rescue-rose: #E11D48;  /* pulse only */
+    --cream-parchment: #FBF6EC;
+    --soft-sand: #F4EEE2;
+
+    /* Semantic tokens (accessible — see design-system/MASTER.md §2) */
+    --background: 40 56% 95%;        /* canvas  #FBF6EC */
+    --foreground: 17 33% 11%;        /* ink     #241712  14:1 on canvas */
+    --card: 0 0% 100%;               /* surface white */
+    --card-foreground: 17 33% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 17 33% 11%;
+    --primary: 26 90% 37%;           /* amber-700 #B45309  white 4.8:1 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 86 78% 27%;         /* sage-700  #4D7C0F  white 4.7:1 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 40 45% 92%;             /* sand #F4EEE2 */
+    --muted-foreground: 28 20% 35%;  /* muted-ink #6B5847  4.6:1 on canvas */
+    --accent: 345 83% 41%;           /* rose-700 #BE123C  white 6:1 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 345 83% 41%;      /* rose-700 #BE123C */
+    --destructive-foreground: 0 0% 100%;
+    --border: 38 36% 84%;            /* line #E4D9C6 */
+    --input: 38 36% 84%;
+    --ring: 26 90% 37%;              /* focus = amber-700 */
+    --radius: 1rem;
+  }
+
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body { @apply bg-[#FBF6EC] text-[#241712] antialiased; }
+  h1, h2, h3, h4, .font-display { font-family: var(--font-display), Georgia, serif; }
+  button, a, input, select, textarea { @apply touch-manipulation; }
+  button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B45309] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF6EC]; }
+  input, select, textarea { @apply min-h-12 text-base sm:text-sm; }
+  /* tabular figures for data: counts, GPS, timers */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .paw-card { @apply relative overflow-hidden rounded-[1.25rem] border border-[#E4D9C6] bg-white shadow-[0_1px_2px_rgba(36,23,18,.06),0_1px_3px_rgba(36,23,18,.10)] transition-all duration-300 ease-out; }
+  .paw-card::after { content: ""; position: absolute; right: -1.5rem; top: -1.5rem; width: 6rem; height: 6rem; opacity: .04; background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='60' cy='70' rx='24' ry='20' fill='%23241712'/%3E%3Cellipse cx='30' cy='42' rx='12' ry='16' fill='%23241712'/%3E%3Cellipse cx='50' cy='28' rx='11' ry='16' fill='%23241712'/%3E%3Cellipse cx='70' cy='28' rx='11' ry='16' fill='%23241712'/%3E%3Cellipse cx='90' cy='42' rx='12' ry='16' fill='%23241712'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-size: contain; pointer-events: none; }
+  .paw-card:hover { @apply -translate-y-1 shadow-[0_12px_32px_rgba(36,23,18,.12)]; }
+  .warm-shell { @apply min-h-screen bg-[#FBF6EC] text-[#241712]; }
+  .soft-pill { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition-all duration-200 hover:scale-105 hover:shadow-lg; }
+  /* Action utilities — accessible (white text passes AA) */
+  .amber-cta { @apply bg-[#B45309] text-white shadow-[0_8px_24px_rgba(180,83,9,.28)] hover:bg-[#92400E]; }
+  .sage-cta { @apply bg-[#4D7C0F] text-white shadow-lg shadow-lime-900/20 hover:bg-[#3F6212]; }
+  .sos-cta { @apply bg-[#BE123C] text-white shadow-[0_8px_24px_rgba(190,18,60,.30)] hover:bg-rose-800; }
+  .shimmer { @apply relative overflow-hidden bg-[#F4EEE2]; }
+  .shimmer::after { content: ""; @apply absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/70 to-transparent; animation: shimmer 1.4s infinite; }
+  /* Accessible skip-to-content link */
+  .skip-link { @apply sr-only; }
+  .skip-link:focus { @apply not-sr-only fixed left-4 top-4 z-[1000] rounded-xl bg-[#B45309] px-4 py-2 text-sm font-bold text-white shadow-lg; }
+  /* Status pill — colour + text, AA text per MASTER §2 */
+  .status-pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold; }
+}
+
+@keyframes shimmer { 100% { transform: translateX(300%); } }
+@keyframes paw-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(217 119 6 / .35); } 50% { box-shadow: 0 0 0 14px rgb(217 119 6 / 0); } }
+@keyframes heart-pop { 0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes rescue-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes scroll-bounce { 0%, 100% { transform: translateY(0); opacity: .75; } 50% { transform: translateY(8px); opacity: 1; } }
+.animate-paw-pulse { animation: paw-pulse 2.4s ease-in-out infinite; }
+.animate-heart-pop { animation: heart-pop .35s ease-out; }
+.animate-rescue-ticker { animation: rescue-ticker 28s linear infinite; }
+.animate-scroll-bounce { animation: scroll-bounce 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
+}

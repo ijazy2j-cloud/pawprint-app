@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  NGO
+  ADMIN
+  VOLUNTEER
+  FOSTERER
+}
+
+enum ReportType {
+  SOS
+  LOST
+  FOUND
+  ADOPTION
+}
+
+enum ReportStatus {
+  REPORTED
+  NGO_NOTIFIED
+  VOLUNTEER_ASSIGNED
+  ESCALATED
+  RESCUED
+  SAFE
+  MATCHED
+  REUNITED
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SosCondition {
+  ABANDONED
+  INJURED
+  LOST
+  STRAY
+}
+
+enum AdoptionStatus {
+  ACTIVE
+  AVAILABLE
+  PENDING
+  ADOPTED
+  WITHDRAWN
+  REJECTED
+  CLOSED
+}
+
+enum AdoptionApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CommunityPostTag {
+  RESCUE
+  ADOPTION
+  REUNION
+  DAILY_JOY
+}
+
+enum ReactionType {
+  LOVE
+  CELEBRATE
+  PAWPRINT
+}
+
+enum NotificationType {
+  REPORT_CREATED
+  REPORT_ASSIGNED
+  REPORT_UPDATED
+  SOS_REPORT
+  ADOPTION_REVIEW
+  ADOPTION_INTEREST
+  SOS_ALERT
+  ADOPTION_APPLICATION
+  COMMENT_REPORT
+  ESCALATION
+  REUNION
+  SYSTEM
+}
+
+enum EmailDigestFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+  NONE
+}
+
+model User {
+  id                          String               @id @default(uuid())
+  email                       String               @unique
+  name                        String?
+  phone                       String?
+  passwordHash                String?
+  role                        UserRole             @default(USER)
+  district                    String?
+  verified                    Boolean              @default(false)
+  fakeReportCount             Int                  @default(0)
+  adopterPledgeAt             DateTime?
+  preferredDistricts          String[]             @default([])
+  availability                String?
+  bio                         String?
+  sosEmailPreference          String               @default("daily")
+  adoptionEmailPreference     String               @default("instant")
+  emailDigestFrequency        EmailDigestFrequency @default(INSTANT)
+  notifyOnSos                 Boolean              @default(true)
+  notifyOnAdoptionApplication Boolean              @default(true)
+  notifyOnReunion             Boolean              @default(true)
+  suspendedAt                 DateTime?
+  deletedAt                   DateTime?
+  createdAt                   DateTime             @default(now())
+
+  reports                  PetReport[]           @relation("ReporterReports")
+  assignedReports          PetReport[]           @relation("AssignedNgoReports")
+  assignedVolunteerReports PetReport[]           @relation("AssignedVolunteerReports")
+  matchedReports           PetReport[]           @relation("ReportMatchedBy")
+  ngoProfile               NgoProfile?
+  adoptionListings         AdoptionListing[]
+  adoptionApplications     AdoptionApplication[]
+  communityPosts           CommunityPost[]
+  comments                 Comment[]
+  reactions                Reaction[]
+  notifications            Notification[]
+  auditLogs                AuditLog[]
+  accounts                 Account[]
+  sessions                 Session[]
+}
+
+model PetReport {
+  id                  String        @id @default(uuid())
+  type                ReportType
+  status              ReportStatus  @default(REPORTED)
+  condition           SosCondition?
+  photos              String[]      @default([])
+  lat                 Decimal       @db.Decimal(10, 7)
+  lng                 Decimal       @db.Decimal(10, 7)
+  district            String
+  landmark            String?
+  description         String
+  petName             String?
+  species             String?
+  breed               String?
+  color               String?
+  size                String?
+  lastSeenDate        DateTime?
+  foundStatus         String?
+  reporterName        String?
+  reporterPhone       String?
+  reporterEmail       String?
+  reporterId          String
+  assignedNgoId       String?
+  assignedVolunteerId String?
+  matchedReportId     String?
+  matchedById         String?
+  matchedAt           DateTime?
+  internalNotes       String?
+  deletedAt           DateTime?
+  isEscalated         Boolean       @default(false)
+  escalatedAt         DateTime?
+  socialSharedAt      DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  reporter          User           @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  assignedNgo       User?          @relation("AssignedNgoReports", fields: [assignedNgoId], references: [id], onDelete: SetNull)
+  assignedVolunteer User?          @relation("AssignedVolunteerReports", fields: [assignedVolunteerId], references: [id], onDelete: SetNull)
+  matchedReport     PetReport?     @relation("LostFoundMatches", fields: [matchedReportId], references: [id], onDelete: SetNull)
+  matchedBy         User?          @relation("ReportMatchedBy", fields: [matchedById], references: [id], onDelete: SetNull)
+  matchedByReports  PetReport[]    @relation("LostFoundMatches")
+  notifications     Notification[]
+
+  @@index([type, status])
+  @@index([district])
+  @@index([reporterId])
+  @@index([assignedNgoId])
+  @@index([assignedVolunteerId])
+  @@index([matchedReportId])
+  @@index([species, color, size])
+  @@index([createdAt])
+}
+
+model NgoProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  orgName           String
+  regNumber         String?
+  coverageDistricts String[] @default([])
+  contactEmail      String
+  contactPhone      String?
+  verified          Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([verified])
+}
+
+model AdoptionListing {
+  id                   String         @id @default(uuid())
+  petName              String
+  species              String
+  age                  String?
+  estimatedAge         String?
+  gender               String?
+  size                 String?
+  district             String?
+  healthStatus         String?
+  healthNotes          String?
+  temperament          String?
+  specialNeeds         String?
+  requirements         String?
+  adoptionRequirements String?
+  photos               String[]       @default([])
+  listedById           String
+  status               AdoptionStatus @default(PENDING)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  listedBy     User                  @relation(fields: [listedById], references: [id], onDelete: Cascade)
+  applications AdoptionApplication[]
+
+  @@index([status])
+  @@index([listedById])
+  @@index([district])
+  @@index([species])
+}
+
+model AdoptionApplication {
+  id               String                    @id @default(uuid())
+  listingId        String
+  applicantId      String
+  applicantName    String
+  livingSituation  String
+  hasGarden        Boolean
+  otherPets        String
+  experience       String
+  whyAdopt         String
+  consentHomeVisit Boolean
+  phone            String
+  email            String
+  status           AdoptionApplicationStatus @default(PENDING)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  listing   AdoptionListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  applicant User            @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([applicantId])
+  @@index([status])
+}
+
+model CommunityPost {
+  id          String            @id @default(uuid())
+  content     String
+  photos      String[]          @default([])
+  authorId    String
+  tag         CommunityPostTag?
+  likes       Int               @default(0)
+  isSpotlight Boolean           @default(false)
+  spotlightAt DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  reactions Reaction[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isSpotlight, spotlightAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  authorId  String
+  postId    String
+  createdAt DateTime @default(now())
+
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post          CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Reaction {
+  id        String       @id @default(uuid())
+  type      ReactionType
+  userId    String
+  postId    String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Notification {
+  id               String           @id @default(uuid())
+  userId           String
+  type             NotificationType
+  message          String
+  read             Boolean          @default(false)
+  relatedReportId  String?
+  relatedCommentId String?
+  createdAt        DateTime         @default(now())
+
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedReport  PetReport? @relation(fields: [relatedReportId], references: [id], onDelete: SetNull)
+  relatedComment Comment?   @relation(fields: [relatedCommentId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+  @@index([relatedReportId])
+  @@index([relatedCommentId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model District {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -1,0 +1,5 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+export default async function AuditPage(){const session=await getServerSession(authOptions); if(session?.user?.role!=="ADMIN") redirect("/"); const logs=await prisma.auditLog.findMany({include:{actor:true},orderBy:{createdAt:"desc"},take:100}); return <div className="space-y-5"><h1 className="text-3xl font-bold">Audit Logs</h1><div className="overflow-x-auto rounded-2xl border bg-card"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted text-left"><tr><th className="p-3">Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>{logs.map(l=><tr key={l.id} className="border-t"><td className="p-3">{l.createdAt.toLocaleString()}</td><td>{l.actor?.email ?? "SYSTEM"}</td><td>{l.action}</td><td>{l.targetType}:{l.targetId}</td><td><pre className="max-w-xs truncate">{JSON.stringify(l.details)}</pre></td></tr>)}</tbody></table></div></div>}

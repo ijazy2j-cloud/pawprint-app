@@ -1,0 +1,43 @@
+{
+  "navigation": {
+    "home": "Home",
+    "sos": "SOS",
+    "lostFound": "Lost/Found",
+    "adopt": "Adopt",
+    "community": "Community",
+    "dashboard": "Dashboard",
+    "language": "Language"
+  },
+  "pages": {
+    "homeTitle": "PawPrint Sri Lanka helps people report, rescue, reunite, and rehome pets.",
+    "sosTitle": "Report an Abandoned or Injured Pet",
+    "lostFoundTitle": "Lost & Found Pets",
+    "adoptTitle": "Adopt a Pet in Sri Lanka",
+    "communityTitle": "Happy Tails Community",
+    "dashboardTitle": "Dashboard"
+  },
+  "forms": {
+    "submit": "Submit",
+    "retry": "Retry",
+    "uploadPhotos": "Upload photos",
+    "district": "District",
+    "description": "Description"
+  },
+  "errors": {
+    "offline": "You're offline. Your SOS report will submit when your connection returns.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "notifications": {
+    "sosAlert": "SOS alert",
+    "adoptionApplication": "Adoption application",
+    "reunion": "Reunion",
+    "escalation": "Escalation"
+  },
+  "emails": {
+    "sosSubject": "SOS Alert",
+    "weeklyDigestSubject": "PawPrint Weekly Digest",
+    "reunionSubject": "Great news! Reunited",
+    "adoptionSubject": "New adoption application",
+    "escalationSubject": "Escalated SOS"
+  }
+}
