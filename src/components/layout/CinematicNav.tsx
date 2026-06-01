@@ -31,16 +31,22 @@ export function CinematicNav() {
   // close mobile menu on route change
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  const text = solid ? "text-[#241712]" : "text-white";
+  // White-on-transparent nav is only legible over the home page's dark hero.
+  // On every other page (light cream tops, the orange SOS hero, etc.) use the
+  // solid cream nav with dark text so the logo and links always meet WCAG AA.
+  const transparent = pathname === "/" && !solid;
+  const text = transparent ? "text-white" : "text-[#241712]";
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const authed = status === "authenticated";
   const loading = status === "loading";
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${solid ? "bg-[#FBF6EC]/95 shadow-sm backdrop-blur-md" : "bg-transparent"}`}>
+    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${transparent ? "bg-transparent" : "bg-[#FBF6EC]/95 shadow-sm backdrop-blur-md"}`}>
+      {/* Contrast scrim: guarantees white logo/links stay AA-legible over the hero's brighter edges. */}
+      {transparent ? <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#241712]/55 via-[#241712]/20 to-transparent" /> : null}
       <nav aria-label="Primary" className="container flex min-h-20 items-center justify-between gap-4">
         <Link href="/" className={`group flex min-h-12 items-center gap-3 rounded-full font-bold ${text}`}>
-          <span className={`grid size-11 place-items-center rounded-full transition ${solid ? "bg-[#241712] text-[#FBF6EC]" : "bg-white/15 text-white backdrop-blur"}`}><PawPrint className="size-5" aria-hidden /></span>
+          <span className={`grid size-11 place-items-center rounded-full transition ${transparent ? "bg-white/15 text-white backdrop-blur" : "bg-[#241712] text-[#FBF6EC]"}`}><PawPrint className="size-5" aria-hidden /></span>
           <span className="font-display text-xl tracking-tight">PawPrint</span>
         </Link>
         <div className="hidden items-center gap-2 md:flex">
@@ -51,18 +57,18 @@ export function CinematicNav() {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`soft-pill ${text} ${active ? "font-bold underline decoration-2 underline-offset-8 decoration-[#D97706]" : "font-medium"} ${solid ? "hover:bg-[#F4EEE2]" : "hover:bg-white/15"}`}
+                className={`soft-pill ${text} ${active ? "font-bold underline decoration-2 underline-offset-8 decoration-[#D97706]" : "font-medium"} ${transparent ? "hover:bg-white/15" : "hover:bg-[#F4EEE2]"}`}
               >
                 {label}
               </Link>
             );
           })}
-          <Link href="/dashboard" aria-current={isActive("/dashboard") ? "page" : undefined} className={`soft-pill ${text} ${isActive("/dashboard") ? "font-bold" : "font-medium"} ${solid ? "hover:bg-[#F4EEE2]" : "hover:bg-white/15"}`}>Dashboard</Link>
+          <Link href="/dashboard" aria-current={isActive("/dashboard") ? "page" : undefined} className={`soft-pill ${text} ${isActive("/dashboard") ? "font-bold" : "font-medium"} ${transparent ? "hover:bg-white/15" : "hover:bg-[#F4EEE2]"}`}>Dashboard</Link>
           {loading ? (
             <span aria-hidden className="soft-pill h-9 w-24 animate-pulse bg-white/20" />
           ) : authed ? (
             <>
-              <Link href="/dashboard/profile" className={`soft-pill ${text} font-medium ${solid ? "hover:bg-[#F4EEE2]" : "hover:bg-white/15"}`}>Hi, {firstName(session?.user?.name)}</Link>
+              <Link href="/dashboard/profile" className={`soft-pill ${text} font-medium ${transparent ? "hover:bg-white/15" : "hover:bg-[#F4EEE2]"}`}>Hi, {firstName(session?.user?.name)}</Link>
               <button type="button" onClick={() => signOut({ callbackUrl: "/" })} className="soft-pill amber-cta"><LogOut className="size-4" aria-hidden /> Sign out</button>
             </>
           ) : (
@@ -72,7 +78,7 @@ export function CinematicNav() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className={`grid min-h-12 min-w-12 place-items-center rounded-full border transition md:hidden ${solid ? "border-stone-200 bg-[#F4EEE2] text-[#241712]" : "border-white/30 bg-white/10 text-white backdrop-blur"}`}
+          className={`grid min-h-12 min-w-12 place-items-center rounded-full border transition md:hidden ${transparent ? "border-white/30 bg-white/10 text-white backdrop-blur" : "border-stone-200 bg-[#F4EEE2] text-[#241712]"}`}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           aria-controls="mobile-menu"

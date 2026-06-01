@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { ChevronDown, HeartHandshake, Siren } from "lucide-react";
+import { ChevronDown, HeartHandshake, PawPrint, Siren } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,36 @@ const dog = "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800"
 const vet = "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800";
 const cat = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800";
 const ease = [0.22, 1, 0.36, 1] as const;
+// Warm amber/earth sheen for the hero heading — a bright cream band sweeping over amber.
+const heroShimmer =
+  "linear-gradient(105deg, #F6B864 0%, #F6B864 38%, #FFF7E8 50%, #FCD49B 58%, #F6B864 72%, #F6B864 100%)";
+
+// A few soft, slow-floating paw motifs for warmth — purely decorative, motion-safe.
+function FloatingPaws({ reduced }: { reduced: boolean | null }) {
+  const paws = [
+    { top: "16%", left: "7%", size: 72, rot: -18, dur: 11, delay: 0 },
+    { top: "60%", left: "13%", size: 52, rot: 12, dur: 13, delay: 1.4 },
+    { top: "26%", left: "83%", size: 92, rot: 20, dur: 14, delay: 0.7 },
+    { top: "70%", left: "78%", size: 60, rot: -10, dur: 12, delay: 2.1 },
+    { top: "44%", left: "48%", size: 46, rot: 8, dur: 15, delay: 1.1 },
+  ];
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {paws.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-[#F6B864]"
+          style={{ top: p.top, left: p.left, opacity: 0.1, rotate: p.rot }}
+          initial={false}
+          animate={reduced ? undefined : { y: [0, -24, 0], rotate: [p.rot, p.rot + 6, p.rot] }}
+          transition={reduced ? undefined : { duration: p.dur, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+        >
+          <PawPrint style={{ width: p.size, height: p.size }} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef(null);
@@ -47,17 +77,48 @@ function AnimatedCounter({ value }: { value: number }) {
 
 function CinematicHero({ data }: { data: HomeData }) {
   const words = "Every Paw Matters".split(" ");
+  const reduced = useReducedMotion();
+  // Gentle staggered entrance — disabled entirely for reduced-motion users.
+  const rise = (delay: number) => ({
+    initial: reduced ? false : { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.7, delay: reduced ? 0 : delay, ease },
+  });
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#241712] text-white">
       <Image src={hero} alt="A rescued dog being held gently in warm sunlight" fill priority sizes="100vw" className="object-cover md:fixed" />
       <div className="absolute inset-0" aria-hidden style={{ background: "linear-gradient(135deg, rgba(36,23,18,0.88) 0%, rgba(180,83,9,0.42) 100%)" }} />
+      <FloatingPaws reduced={reduced} />
       <div className="container relative z-10 flex min-h-screen flex-col justify-center pt-24">
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6, ease }} className="mb-5 w-fit rounded-full bg-white/10 px-5 py-2 text-sm font-bold uppercase tracking-[0.22em] text-amber-100 backdrop-blur">Free rescue network • Sri Lanka</motion.p>
+        <motion.p {...rise(0)} className="mb-5 w-fit rounded-full bg-white/10 px-5 py-2 text-sm font-bold uppercase tracking-[0.22em] text-amber-100 backdrop-blur">Free rescue network • Sri Lanka</motion.p>
         <h1 className="max-w-5xl font-display text-5xl font-bold leading-[1.05] tracking-[-0.02em] md:text-7xl lg:text-8xl">
-          {words.map((word, idx) => <motion.span key={word} className="mr-4 inline-block" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: idx * .1, ease }}>{word}</motion.span>)}
+          {words.map((word, idx) => (
+            <motion.span
+              key={word}
+              className="mr-4 inline-block"
+              style={
+                reduced
+                  ? { color: "#F6B864" }
+                  : { backgroundImage: heroShimmer, backgroundSize: "250% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }
+              }
+              initial={reduced ? false : { opacity: 0, y: 30 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, backgroundPositionX: ["0%", "200%"] }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : {
+                      opacity: { duration: 0.8, delay: idx * 0.12, ease },
+                      y: { duration: 0.8, delay: idx * 0.12, ease },
+                      backgroundPositionX: { duration: 6, repeat: Infinity, repeatType: "loop", ease: "linear", delay: 1.2 },
+                    }
+              }
+            >
+              {word}
+            </motion.span>
+          ))}
         </h1>
-        <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .55, ease }} className="mt-6 max-w-3xl text-xl leading-relaxed text-amber-50 md:text-2xl">A non-profit rescue network connecting compassionate people with animals in need across Sri Lanka.</motion.p>
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .85, ease }} className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <motion.p {...rise(0.55)} className="mt-6 max-w-3xl text-xl leading-relaxed text-amber-50 md:text-2xl">A non-profit rescue network connecting compassionate people with animals in need across Sri Lanka.</motion.p>
+        <motion.div {...rise(0.85)} className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button asChild size="lg" className="rounded-full bg-[#BE123C] px-8 text-base text-white shadow-[0_8px_24px_rgba(190,18,60,.35)] hover:scale-105 hover:bg-rose-800 hover:shadow-xl"><Link href="/sos-report"><Siren className="size-5" aria-hidden /> Report an Emergency</Link></Button>
           <Button asChild size="lg" variant="outline" className="rounded-full border-white/75 bg-transparent px-8 text-base text-white hover:scale-105 hover:bg-white hover:text-[#241712]"><Link href="/adopt"><HeartHandshake className="size-5" aria-hidden /> Adopt a Pet</Link></Button>
           <Link href="/community" className="group min-h-12 px-2 py-3 font-bold text-white underline-offset-8 hover:underline">See Success Stories <span aria-hidden className="transition group-hover:translate-x-1">→</span></Link>

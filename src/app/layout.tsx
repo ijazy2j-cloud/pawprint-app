@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Hanken_Grotesk, Noto_Sans_Sinhala } from "next/font/google";
 
 import { CinematicFooter } from "@/components/layout/CinematicFooter";
@@ -15,10 +15,44 @@ const display = Fraunces({ subsets: ["latin"], variable: "--font-display", weigh
 // First-class Sinhala support for the `si` locale
 const sinhala = Noto_Sans_Sinhala({ subsets: ["sinhala"], variable: "--font-sinhala", weight: ["400", "500", "600", "700"], display: "swap" });
 
+const SITE_URL = "https://pawprint-app.netlify.app";
+const SITE_DESCRIPTION =
+  "PawPrint Sri Lanka is a free, non-commercial network to report, rescue, reunite, and rehome dogs and cats across Sri Lanka.";
+
 export const metadata: Metadata = {
-  title: "PawPrint Sri Lanka — Rescue, Reunite, Adopt",
-  description: "A free, non-commercial community platform for reporting abandoned pets, finding lost animals, and adopting pets in Sri Lanka. No sales, just compassion.",
+  metadataBase: new URL(SITE_URL),
+  title: "PawPrint Sri Lanka",
+  description: SITE_DESCRIPTION,
+  applicationName: "PawPrint Sri Lanka",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    type: "website",
+    siteName: "PawPrint Sri Lanka",
+    title: "PawPrint Sri Lanka",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_US",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "PawPrint Sri Lanka — free pet rescue network" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PawPrint Sri Lanka",
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.png"],
+  },
 };
+
+export const viewport: Viewport = { themeColor: "#B45309" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
